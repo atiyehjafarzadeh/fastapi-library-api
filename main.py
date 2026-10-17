@@ -1,0 +1,115 @@
+
+from typing import Optional
+
+from fastapi import FastAPI, HTTPException, Response
+from pydantic import BaseModel, Field
+
+
+app = FastAPI(
+    title="Library API",
+    description="A simple library management API built with FastAPI",
+    version="1.0.0",
+)
+
+
+# Models
+class BookIn(BaseModel):
+    title: str = Field(min_length=1)
+    author: str = Field(min_length=1)
+    year: Optional[int] = Field(default=None, ge=0)
+    available: bool = True
+
+
+class BookUpdate(BaseModel):
+    title: Optional[str] = Field(default=None, min_length=1)
+    author: Optional[str] = Field(default=None, min_length=1)
+    year: Optional[int] = Field(default=None, ge=0)
+    available: Optional[bool] = None
+
+
+# In-memory data (no database)
+books = [
+    {
+        "id": 1,
+        "title": "Clean Code",
+        "author": "Robert C. Martin",
+        "year": 2008,
+        "available": True,
+    },
+    {
+        "id": 2,
+        "title": "The Pragmatic Programmer",
+        "author": "Andrew Hunt",
+        "year": 1999,
+        "available": True,
+    },
+]
+
+next_id = 3
+
+
+# Helper function
+def find_book(book_id: int):
+    for book in books:
+        if book["id"] == book_id:
+            return book
+
+    raise HTTPException(
+        status_code=404,
+        detail="Book not found",
+    )
+
+
+# GET /books - Get all books
+@app.get("/books")
+def get_books():
+    return books
+
+
+# POST /books - Add a new book
+@app.post("/books", status_code=201)
+def add_book(data: BookIn):
+    global next_id
+
+    new_book = data.model_dump()
+    new_book["id"] = next_id
+
+    books.append(new_book)
+    next_id += 1
+
+    return new_book
+
+
+# GET /books/{id} - Get a specific book
+@app.get("/books/{id}")
+def get_book(id: int):
+    return find_book(id)
+
+
+# PATCH /books/{id} - Update a book
+@app.patch("/books/{id}")
+def update_book(id: int, data: BookUpdate):
+    book = find_book(id)
+
+    changes = data.model_dump(exclude_unset=True)
+
+    # Reject null values for all provided fields
+    for field, value in changes.items():
+        if value is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"{field} cannot be null",
+            )
+
+    book.update(changes)
+
+    return book
+
+
+# DELETE /books/{id} - Delete a book
+@app.delete("/books/{id}", status_code=204)
+def delete_book(id: int):
+    book = find_book(id)
+    books.remove(book)
+
+    return Response(status_code=204)
