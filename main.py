@@ -27,28 +27,33 @@ class BookUpdate(BaseModel):
     available: Optional[bool] = None
 
 
-# In-memory data (no database)
 books = [
     {
         "id": 1,
-        "title": "Clean Code",
-        "author": "Robert C. Martin",
-        "year": 2008,
+        "title": "طراحی الگوریتم",
+        "author": "سپیده",
+        "year": None,
         "available": True,
     },
     {
         "id": 2,
-        "title": "The Pragmatic Programmer",
-        "author": "Andrew Hunt",
-        "year": 1999,
+        "title": "سووشون",
+        "author": "سیمین دانشور",
+        "year": 1969,
+        "available": True,
+    },
+    {
+        "id": 3,
+        "title": "شازده کوچولو",
+        "author": "آنتوان دو سنت‌اگزوپری",
+        "year": 1943,
         "available": True,
     },
 ]
 
-next_id = 3
+next_id = 4
 
 
-# Helper function
 def find_book(book_id: int):
     for book in books:
         if book["id"] == book_id:
@@ -60,13 +65,11 @@ def find_book(book_id: int):
     )
 
 
-# GET /books - Get all books
 @app.get("/books")
 def get_books():
     return books
 
 
-# POST /books - Add a new book
 @app.post("/books", status_code=201)
 def add_book(data: BookIn):
     global next_id
@@ -80,20 +83,17 @@ def add_book(data: BookIn):
     return new_book
 
 
-# GET /books/{id} - Get a specific book
 @app.get("/books/{id}")
 def get_book(id: int):
     return find_book(id)
 
 
-# PATCH /books/{id} - Update a book
 @app.patch("/books/{id}")
 def update_book(id: int, data: BookUpdate):
     book = find_book(id)
 
     changes = data.model_dump(exclude_unset=True)
 
-    # Reject null values for all provided fields
     for field, value in changes.items():
         if value is None:
             raise HTTPException(
@@ -106,7 +106,6 @@ def update_book(id: int, data: BookUpdate):
     return book
 
 
-# DELETE /books/{id} - Delete a book
 @app.delete("/books/{id}", status_code=204)
 def delete_book(id: int):
     book = find_book(id)
