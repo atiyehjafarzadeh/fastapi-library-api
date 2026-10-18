@@ -97,11 +97,12 @@ Request body:
 
 ```json
 {
-  "title": "Python Crash Course",
-  "author": "Eric Matthes",
-  "year": 2019,
-  "available": true
-}
+        "id": 2,
+        "title": "سووشون",
+        "author": "سیمین دانشور",
+        "year": 1969,
+        "available": True,
+    }
 ```
 
 A successful request returns `201 Created` and the new book, including its automatically assigned ID.
